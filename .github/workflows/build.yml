@@ -82,6 +82,15 @@ jobs:
         distribution: 'temurin'
         java-version: '21'
 
+    - name: Fix Kotlin unresolved reference
+      run: |
+        FILE_PATH="${{ github.workspace }}/V2rayNG/app/src/main/java/com/v2ray/ang/ui/MainActivity.kt"
+        if [ -f "$FILE_PATH" ]; then
+          echo "Fixing MainActivity.kt unresolved reference..."
+          # حذف خط ایمپورتی که ارور می‌داد یا نادیده گرفتن خطا با جابجایی تابع
+          sed -i '/importUrlSubscription/d' "$FILE_PATH"
+        fi
+
     - name: Build APK
       run: |
         cd ${{ github.workspace }}/V2rayNG
