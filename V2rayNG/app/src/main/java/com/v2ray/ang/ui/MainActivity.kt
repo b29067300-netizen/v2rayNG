@@ -82,12 +82,47 @@ class MainActivity : HelperBaseActivity(), NavigationView.OnNavigationItemSelect
         binding.fab.setOnClickListener { handleFabAction() }
         binding.layoutTest.setOnClickListener { handleLayoutTestClick() }
 
+        // افزودن خودکار سابسکریپشن NexGozar در اولین اجرای برنامه
+        addDefaultSubscriptionIfNeeded()
+
         setupGroupTab()
         setupViewModel()
         SubscriptionUpdater.sync()
         mainViewModel.reloadServerList()
 
         checkAndRequestPermission(PermissionType.POST_NOTIFICATIONS) {
+        }
+    }
+
+    /**
+     * افزودن هوشمند سابسکریپشن پیش‌فرض به صورت خودکار
+     */
+    private fun addDefaultSubscriptionIfNeeded() {
+        val isFirstRunKey = "nexgozar_first_run_sub_added"
+        val isFirstRun = MmkvManager.decodeSettingsBool(isFirstRunKey, true)
+        
+        if (isFirstRun) {
+            lifecycleScope.launch(Dispatchers.IO) {
+                try {
+                    val subUrl = "https://raw.githubusercontent.com/b29067300-netizen/Sub/refs/heads/main/configs.txt"
+                    val subName = "NexGozar Official"
+                    
+                    // افزودن سابسکریپشن به دیتابیس برنامه
+                    val resultId = AngConfigManager.importUrlSubscription(subName, subUrl)
+                    if (resultId.isNotEmpty()) {
+                        // ذخیره وضعیت برای عدم تکرار در دفعات بعدی اجرا
+                        MmkvManager.encodeSettings(isFirstRunKey, false)
+                        
+                        // شروع خودکار آپدیت سابسکریپشن برای دریافت کانفیگ‌ها
+                        delay(1000)
+                        withContext(Dispatchers.Main) {
+                            importConfigViaSub()
+                        }
+                    }
+                } catch (e: Exception) {
+                    LogUtil.e(AppConfig.TAG, "Failed to auto-add default subscription", e)
+                }
+            }
         }
     }
 
